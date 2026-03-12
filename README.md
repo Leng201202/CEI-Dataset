@@ -47,6 +47,9 @@ python3 generate_mask.py
 - This script generates mask images from the combined annotation files.
 - Output masks are saved in the appropriate directory (the script may need to be updated to match your folder structure).
 
+
+## Folder 
+![alt text](image.png)
 ---
 
 **Note:**
