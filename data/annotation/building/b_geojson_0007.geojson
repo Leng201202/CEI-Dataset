@@ -1,0 +1,8 @@
+{
+"type": "FeatureCollection",
+"name": "b_geojson_0007",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::4490" } },
+"features": [
+
+]
+}

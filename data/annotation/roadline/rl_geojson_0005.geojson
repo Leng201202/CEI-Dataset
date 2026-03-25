@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "rl_geojson_0005",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::4490" } },
+"features": [
+{ "type": "Feature", "properties": { "code": 33 }, "geometry": { "type": "LineString", "coordinates": [ [ 0.311418658103028, -832.183137963728655 ], [ 189.276564302635308, -904.491229409340463 ], [ 273.153950379545051, -937.270897531351011 ], [ 406.682892582441639, -983.548076056542527 ], [ 515.145029750859294, -1024.04060726608509 ] ] } },
+{ "type": "Feature", "properties": { "code": 33 }, "geometry": { "type": "LineString", "coordinates": [ [ 401.38029920976328, -981.619860284659694 ], [ 378.241709947167465, -1023.558553323114666 ] ] } }
+]
+}
