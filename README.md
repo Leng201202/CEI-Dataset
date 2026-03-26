@@ -19,7 +19,7 @@ python3 crop_img.py
 	- For buildings: `b_geojson_0001.geojson`
 	- For sports: `s_geojson_0001.geojson`
 	- For vegetation: `v_geojson_0001.geojson`
-	- For road lines: `roadline_geojson_0001.geojson`
+	- For road lines: `rl_geojson_0001.geojson`
 	- etc.
 - Place each GeoJSON file in its corresponding subdirectory under `data/annotation/` (e.g., `data/annotation/building/`).
 

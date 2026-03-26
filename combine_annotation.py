@@ -1,32 +1,48 @@
 import json
 import os
+import re
 from pathlib import Path
 
 def combine_annotations():
     """
-    Combine all annotation categories (building, road, sport, vege, water) 
+    Combine all annotation categories (building, roadline, roadarea, sport, vege, water) 
     into single geojson files per image.
     """
     # Define paths
-    base_path = Path("data-set(b)/annotations")
-    output_path = Path("data-set(b)/combined_annotations")
+    base_path = Path("data/annotation")
+    output_path = Path("data/combined_annotations")
     
     # Create output directory
     output_path.mkdir(parents=True, exist_ok=True)
     
     # Define categories and their prefixes
     categories = {
-        "building": "b",
-        "road": "r",
-        "sport": "s",
-        "vege": "v",
-        "water": "w"
+        "building": "b_geojson",
+        "roadline": "rl_geojson",
+        "roadarea": "ra_geojson",
+        "sport": "s_geojson",
+        "vege": "v_geojson",
+        "water": "w_geojson"
     }
     
-    # Get number of images (assuming 10 images numbered 001-010)
-    image_numbers = [f"{i:03d}" for i in range(1, 11)]
+    # Dynamically detect image numbers from the building directory
+    # Looking for files like b_geojson_0000.geojson
+    image_numbers = set()
+    building_dir = base_path / "building"
+    if building_dir.exists():
+        for f in building_dir.glob("b_geojson_*.geojson"):
+            # Extract the 4-digit number at the end (before .geojson)
+            match = re.search(r'_(\d{4})\.geojson$', f.name)
+            if match:
+                image_numbers.add(match.group(1))
     
-    print(f"Combining annotations for {len(image_numbers)} images...")
+    if not image_numbers:
+        # Fallback if building directory is empty or not found
+        image_numbers = [f"{i:04d}" for i in range(10)]
+    
+    image_numbers = sorted(list(image_numbers))
+    
+    print(f"Combining annotations for {len(image_numbers)} images: {', '.join(image_numbers)}")
     
     for img_num in image_numbers:
         # Initialize combined geojson structure
@@ -56,7 +72,9 @@ def combine_annotations():
                 except Exception as e:
                     print(f"  ✗ Error reading {geojson_file}: {e}")
             else:
-                print(f"  ⚠ File not found: {geojson_file}")
+                # Silently skip if file not found, but we can log it if needed
+                # print(f"  ⚠ File not found: {geojson_file}")
+                pass
         
         # Write combined geojson file
         output_file = output_path / f"{img_num}.geojson"
