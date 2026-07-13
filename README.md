@@ -3,14 +3,27 @@
 
 ## 1. Cropping Images
 
-Run the following command to crop all images into 1024x1024 tiles (with a 250px left margin):
+Run the following command to crop all `ms_N.png` and `ms_N_real.png` images into 1024x1024 TIFF tiles (with a 260px left margin):
 
 ```sh
-python3 crop_img.py
+.venv/bin/python crop_img.py
 ```
 
-- Cropped images will be saved in the `data/raw/cropped/` directory.
-- The script automatically processes all images in `data/raw/image/`.
+- Cropped label images will be saved in `data/raw/cropped/label/`.
+- Cropped real images will be saved in `data/raw/cropped/real/`.
+- Tiles are named `maesuai_1.tif`, `maesuai_2.tif`, etc.
+- The script automatically processes all images in `data/raw/Images/`.
+
+Dataset roles:
+
+- `label/`: cropped images used for pretraining and prediction.
+- `real/`: cropped real images used for real dataset training.
+
+- To use the older single-folder crop mode, run:
+
+```sh
+.venv/bin/python crop_img.py --mode standard --only ms_1.png --output-dir data/raw/cropped/ms_1
+```
 
 ## 2. Labeling
 
