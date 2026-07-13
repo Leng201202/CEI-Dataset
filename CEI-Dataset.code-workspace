@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"name": "CEI-Dataset",
+			"path": "."
+		},
+		{
+			"name": "vector",
+			"path": "../vector"
+		}
+	],
+	"settings": {}
+}
