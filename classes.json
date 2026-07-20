@@ -1,0 +1,56 @@
+{
+  "name": "CEI",
+  "description": "CEI land-cover classes. Labels are authored as RGB in data/raw/review/*_mask.tif and exported to single-channel class-ID masks by rgb_to_class_id.py.",
+  "ignore_index": 0,
+  "num_classes": 8,
+  "classes": [
+    {
+      "id": 0,
+      "name": "Unlabeled",
+      "color": [0, 0, 0],
+      "definition": "Cannot be determined. Excluded from the loss via ignore_index."
+    },
+    {
+      "id": 1,
+      "name": "Rangeland",
+      "color": [0, 255, 36],
+      "definition": "Rangeland, grass, shrubs, parks, golf courses, uncultivated vegetation."
+    },
+    {
+      "id": 2,
+      "name": "Agriculture",
+      "color": [75, 181, 73],
+      "definition": "Farmland, agriculture land."
+    },
+    {
+      "id": 3,
+      "name": "Tree",
+      "color": [34, 97, 38],
+      "definition": "A tree, forest."
+    },
+    {
+      "id": 4,
+      "name": "Water",
+      "color": [0, 69, 255],
+      "definition": "Rivers, lakes, ponds, dams, sea, swimming pools."
+    },
+    {
+      "id": 5,
+      "name": "Building",
+      "color": [222, 31, 7],
+      "definition": "Building."
+    },
+    {
+      "id": 6,
+      "name": "Road",
+      "color": [255, 255, 255],
+      "definition": "Surface designed for vehicular movement."
+    },
+    {
+      "id": 7,
+      "name": "Non-vegetated",
+      "color": [128, 0, 0],
+      "definition": "Sport surfaces, bareland, pavement, sidewalk, parking lots, sand, rocks, exposed soil, non-vegetated natural surface."
+    }
+  ]
+}

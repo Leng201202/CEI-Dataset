@@ -2,7 +2,7 @@ GIMP Palette
 Name: OpenEarthMap
 Columns: 3
 #
-128   0   0	Bareland
+128   0   0	Non-Vegetated
   0 255  36	Rangeland
 255 255 255	Road
  34  97  38	Tree

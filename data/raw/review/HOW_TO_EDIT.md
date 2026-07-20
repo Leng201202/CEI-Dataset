@@ -33,23 +33,32 @@ Each image here comes as a pair:
 
 ## Class colors
 
-| Class | Color (RGB) |
-| --- | --- |
-| Bareland | 128, 0, 0 |
-| Rangeland | 0, 255, 36 |
-| Developed space | 148, 148, 148 |
-| Road | 255, 255, 255 |
-| Tree | 34, 97, 38 |
-| Water | 0, 69, 255 |
-| Agriculture land | 75, 181, 73 |
-| Building | 222, 31, 7 |
-| Unlabeled (ignore) | 0, 0, 0 |
+Import `oem_palette.gpl` in GIMP and paint with these 7 classes plus
+"Unlabeled". These are the *only* colors allowed in a mask.
+
+| Class | Color (RGB) | Covers |
+| --- | --- | --- |
+| Rangeland | 0, 255, 36 | Grass, shrubs, parks, golf courses, uncultivated vegetation |
+| Agriculture land | 75, 181, 73 | Farmland, agriculture land |
+| Tree | 34, 97, 38 | A tree, forest |
+| Water | 0, 69, 255 | Rivers, lakes, ponds, dams, sea, swimming pools |
+| Building | 222, 31, 7 | Building |
+| Road | 255, 255, 255 | Surface designed for vehicular movement |
+| Non-Vegetated | 128, 0, 0 | Sport surfaces, bareland, pavement, sidewalk, parking lots, sand, rocks, exposed soil, non-vegetated natural surface |
+| Unlabeled (ignore) | 0, 0, 0 | Cannot be determined |
+
+"Developed space" (148, 148, 148) is **no longer a class**. It was merged into
+Non-Vegetated. Do not paint with it.
 
 Paint a region black ("Unlabeled") when you genuinely cannot tell what it is.
 Those pixels are excluded from the loss instead of teaching the model a guess.
 
 ## When you are done
 
-Run the import step to convert the corrected masks into dataset labels:
+Nothing further -- the `.tif` masks are the deliverable. Keep painting in these
+colors and hand them in.
 
-    python tools/cei/import_from_gimp.py --review <this folder> --output data/CEI_data/labels
+Numeric class ids get assigned later, in one pass over the finished dataset, by
+`rgb_to_class_id.py` at the repo root (mapping in `classes.json`). You do not
+need to run it while labelling. It never modifies the `.tif` masks; it only
+reads them and writes separate files.
