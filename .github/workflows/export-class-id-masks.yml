@@ -10,6 +10,7 @@ jobs:
     name: Export masks and copy to lulc-cei
     runs-on:
       - self-hosted
+      - Windows
       - desktop
     env:
       LULC_CEI_DIR: ${{ vars.LULC_CEI_DIR }}
@@ -19,39 +20,43 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Find Python
-        shell: bash
+        shell: pwsh
         run: |
-          if command -v python3 >/dev/null 2>&1; then
-            echo "PYTHON=python3" >> "$GITHUB_ENV"
-          elif command -v python >/dev/null 2>&1; then
-            echo "PYTHON=python" >> "$GITHUB_ENV"
-          else
-            echo "Python is not installed or is not on PATH for this runner."
+          $python = Get-Command python -ErrorAction SilentlyContinue
+          if (-not $python) {
+            $python = Get-Command py -ErrorAction SilentlyContinue
+          }
+
+          if (-not $python) {
+            Write-Error "Python is not installed or is not on PATH for this runner."
             exit 1
-          fi
+          }
+
+          "PYTHON=$($python.Source)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Install Python dependencies
-        shell: bash
-        run: "$PYTHON" -m pip install -r requirements.txt
+        shell: pwsh
+        run: |
+          & "$env:PYTHON" -m pip install -r requirements.txt
 
       - name: Export RGB masks to class-id masks
-        shell: bash
-        run: "$PYTHON" rgb_to_class_id.py --stats
+        shell: pwsh
+        run: |
+          & "$env:PYTHON" rgb_to_class_id.py --stats
 
       - name: Copy masks to lulc-cei
-        shell: bash
+        shell: pwsh
         run: |
-          if [ -z "$LULC_CEI_DIR" ]; then
-            echo "Missing GitHub Actions variable: LULC_CEI_DIR"
-            echo "Set it to the absolute path of lulc-cei on the Desktop runner."
+          if ([string]::IsNullOrWhiteSpace($env:LULC_CEI_DIR)) {
+            Write-Error "Missing GitHub Actions variable: LULC_CEI_DIR. Set it to the absolute path of lulc-cei on the Windows Desktop runner."
             exit 1
-          fi
+          }
 
-          if [ ! -d "$LULC_CEI_DIR" ]; then
-            echo "Expected destination directory does not exist: $LULC_CEI_DIR"
-            echo "This workflow must run on the Desktop runner where lulc-cei is already checked out."
+          if (-not (Test-Path -Path $env:LULC_CEI_DIR -PathType Container)) {
+            Write-Error "Expected destination directory does not exist: $env:LULC_CEI_DIR"
             exit 1
-          fi
+          }
 
-          mkdir -p "$LULC_CEI_DIR/data/masks"
-          cp -R data/masks/. "$LULC_CEI_DIR/data/masks/"
+          $destMasks = Join-Path $env:LULC_CEI_DIR "data\masks"
+          New-Item -ItemType Directory -Force -Path $destMasks | Out-Null
+          Copy-Item -Path "data\masks\*" -Destination $destMasks -Recurse -Force
