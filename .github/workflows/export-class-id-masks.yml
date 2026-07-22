@@ -13,7 +13,7 @@ jobs:
       - Windows
       - desktop
     env:
-      LULC_CEI_DIR: ${{ vars.LULC_CEI_DIR }}
+      CEI_DATA_DIR: ${{ vars.CEI_DATA_DIR }}
 
     steps:
       - name: Checkout CEI-Dataset
@@ -47,16 +47,16 @@ jobs:
       - name: Copy masks to lulc-cei
         shell: pwsh
         run: |
-          if ([string]::IsNullOrWhiteSpace($env:LULC_CEI_DIR)) {
-            Write-Error "Missing GitHub Actions variable: LULC_CEI_DIR. Set it to the absolute path of lulc-cei on the Windows Desktop runner."
+          if ([string]::IsNullOrWhiteSpace($env:CEI_DATA_DIR)) {
+            Write-Error "Missing GitHub Actions variable: CEI_DATA_DIR. Set it to the absolute path of the CEI_data folder on the Windows Desktop runner."
             exit 1
           }
 
-          if (-not (Test-Path -Path $env:LULC_CEI_DIR -PathType Container)) {
-            Write-Error "Expected destination directory does not exist: $env:LULC_CEI_DIR"
+          if (-not (Test-Path -Path $env:CEI_DATA_DIR -PathType Container)) {
+            Write-Error "Expected destination directory does not exist: $env:CEI_DATA_DIR"
             exit 1
           }
 
-          $destMasks = Join-Path $env:LULC_CEI_DIR "data\masks"
+          $destMasks = Join-Path $env:CEI_DATA_DIR "masks"
           New-Item -ItemType Directory -Force -Path $destMasks | Out-Null
           Copy-Item -Path "data\masks\*" -Destination $destMasks -Recurse -Force
