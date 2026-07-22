@@ -1,0 +1,57 @@
+name: Export class-id masks
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  export-and-copy:
+    name: Export masks and copy to lulc-cei
+    runs-on:
+      - self-hosted
+      - desktop
+    env:
+      LULC_CEI_DIR: ${{ vars.LULC_CEI_DIR }}
+
+    steps:
+      - name: Checkout CEI-Dataset
+        uses: actions/checkout@v4
+
+      - name: Find Python
+        shell: bash
+        run: |
+          if command -v python3 >/dev/null 2>&1; then
+            echo "PYTHON=python3" >> "$GITHUB_ENV"
+          elif command -v python >/dev/null 2>&1; then
+            echo "PYTHON=python" >> "$GITHUB_ENV"
+          else
+            echo "Python is not installed or is not on PATH for this runner."
+            exit 1
+          fi
+
+      - name: Install Python dependencies
+        shell: bash
+        run: "$PYTHON" -m pip install -r requirements.txt
+
+      - name: Export RGB masks to class-id masks
+        shell: bash
+        run: "$PYTHON" rgb_to_class_id.py --stats
+
+      - name: Copy masks to lulc-cei
+        shell: bash
+        run: |
+          if [ -z "$LULC_CEI_DIR" ]; then
+            echo "Missing GitHub Actions variable: LULC_CEI_DIR"
+            echo "Set it to the absolute path of lulc-cei on the Desktop runner."
+            exit 1
+          fi
+
+          if [ ! -d "$LULC_CEI_DIR" ]; then
+            echo "Expected destination directory does not exist: $LULC_CEI_DIR"
+            echo "This workflow must run on the Desktop runner where lulc-cei is already checked out."
+            exit 1
+          fi
+
+          mkdir -p "$LULC_CEI_DIR/data/masks"
+          cp -R data/masks/. "$LULC_CEI_DIR/data/masks/"
