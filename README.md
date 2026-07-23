@@ -46,6 +46,17 @@ never has to think about ids.
 `data/masks/` is generated output -- safe to delete and rebuild. The `.tif`
 masks are never modified.
 
+If masks contain the retired Developed space colour or small anti-aliased
+palette drift, write repaired RGB masks to a separate folder first:
+
+       python rgb_to_class_id.py --repair-rgb
+       python rgb_to_class_id.py --check --input data/raw/review_repaired
+       python rgb_to_class_id.py --stats --input data/raw/review_repaired
+
+`--repair-rgb` maps retired Developed space (`148, 148, 148`) to
+Non-Vegetated and snaps only near-palette colours by default. It does not
+overwrite the source masks.
+
 ### Checking for mis-colouring
 
 Because the colour is the label, a wrong colour is a wrong label. The usual

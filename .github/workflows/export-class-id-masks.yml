@@ -60,3 +60,23 @@ jobs:
           $destMasks = Join-Path $env:CEI_DATA_DIR "masks"
           New-Item -ItemType Directory -Force -Path $destMasks | Out-Null
           Copy-Item -Path "data\masks\*" -Destination $destMasks -Recurse -Force
+
+      - name: Build CEI test split
+        shell: pwsh
+        run: |
+          $dataRoot = Split-Path -Parent $env:CEI_DATA_DIR
+          $lulcCeiDir = Split-Path -Parent $dataRoot
+          $splitScript = Join-Path $lulcCeiDir "tools\cei\make_test_split.py"
+
+          if (-not (Test-Path -Path $splitScript -PathType Leaf)) {
+            Write-Error "Expected split script does not exist: $splitScript"
+            exit 1
+          }
+
+          Push-Location $lulcCeiDir
+          try {
+            & "$env:PYTHON" $splitScript
+          }
+          finally {
+            Pop-Location
+          }

@@ -30,6 +30,7 @@ REPO_ROOT = Path(__file__).resolve().parent
 DEFAULT_CLASSES = REPO_ROOT / "classes.json"
 DEFAULT_INPUT = REPO_ROOT / "data" / "raw" / "review"
 DEFAULT_OUTPUT = REPO_ROOT / "data" / "masks"
+DEFAULT_REPAIR_OUTPUT = REPO_ROOT / "data" / "raw" / "review_repaired"
 
 
 def load_classes(path):
@@ -81,7 +82,10 @@ def convert(path, lookup):
 # Colours that used to be classes. Seeing one means somebody is painting from an
 # outdated palette, which is a different fix from a stray anti-aliased pixel.
 RETIRED = {
-    (148, 148, 148): "Developed space -- retired, merged into Non-Vegetated",
+    (148, 148, 148): {
+        "note": "Developed space -- retired, merged into Non-Vegetated",
+        "replacement": (128, 0, 0),
+    },
 }
 
 
@@ -95,6 +99,50 @@ def nearest_class(color, color_to_id, id_to_name):
     best = min(color_to_id, key=lambda c: (c[0] - r) ** 2 + (c[1] - g) ** 2 + (c[2] - b) ** 2)
     distance = max(abs(best[0] - r), abs(best[1] - g), abs(best[2] - b))
     return id_to_name[color_to_id[best]], distance
+
+
+def nearest_palette_color(color, color_to_id):
+    r, g, b = color
+    best = min(color_to_id, key=lambda c: (c[0] - r) ** 2 + (c[1] - g) ** 2 + (c[2] - b) ** 2)
+    distance = max(abs(best[0] - r), abs(best[1] - g), abs(best[2] - b))
+    return best, distance
+
+
+def repair_rgb_mask(path, color_to_id, snap_distance):
+    """Return (repaired RGB array, replacements, unresolved).
+
+    Retired colours are mapped explicitly. Other off-palette colours are snapped
+    only when they are within snap_distance of a current palette colour.
+    """
+    with Image.open(path) as im:
+        rgb = np.array(im.convert("RGB"))
+
+    flat = rgb.reshape(-1, 3)
+    colors, inverse, counts = np.unique(flat, axis=0, return_inverse=True, return_counts=True)
+    repaired_colors = colors.copy()
+    replacements = []
+    unresolved = {}
+
+    for index, color_arr in enumerate(colors):
+        color = tuple(int(v) for v in color_arr)
+        if color in color_to_id:
+            continue
+
+        if color in RETIRED:
+            replacement = RETIRED[color]["replacement"]
+            reason = RETIRED[color]["note"]
+        else:
+            replacement, distance = nearest_palette_color(color, color_to_id)
+            if distance > snap_distance:
+                unresolved[color] = int(counts[index])
+                continue
+            reason = f"nearest palette colour, distance {distance}"
+
+        repaired_colors[index] = replacement
+        replacements.append((color, int(counts[index]), replacement, reason))
+
+    repaired = repaired_colors[inverse].reshape(rgb.shape).astype(np.uint8)
+    return repaired, replacements, unresolved
 
 
 def iter_masks(input_path, pattern):
@@ -113,6 +161,23 @@ def parse_args():
     parser.add_argument("--suffix", default="_label.tif", help="Replaces '_mask.tif' in output names.")
     parser.add_argument("--check", action="store_true", help="Validate palette only; write nothing.")
     parser.add_argument("--stats", action="store_true", help="Print per-class pixel counts across the run.")
+    parser.add_argument(
+        "--repair-rgb",
+        action="store_true",
+        help="Write repaired RGB masks to --repair-output instead of exporting class IDs.",
+    )
+    parser.add_argument(
+        "--repair-output",
+        default=DEFAULT_REPAIR_OUTPUT,
+        type=Path,
+        help="Where --repair-rgb writes repaired RGB masks.",
+    )
+    parser.add_argument(
+        "--snap-distance",
+        default=8,
+        type=int,
+        help="Maximum per-channel distance for snapping off-palette anti-aliased colours during --repair-rgb.",
+    )
     return parser.parse_args()
 
 
@@ -124,6 +189,41 @@ def main():
     masks = iter_masks(args.input, args.pattern)
     if not masks:
         raise SystemExit(f"No masks matching {args.pattern!r} in {args.input}")
+
+    if args.repair_rgb:
+        args.repair_output.mkdir(parents=True, exist_ok=True)
+        failed = []
+
+        for path in masks:
+            repaired, replacements, unresolved = repair_rgb_mask(path, color_to_id, args.snap_distance)
+            if unresolved:
+                failed.append((path, unresolved))
+                total_bad = sum(unresolved.values())
+                print(f"FAIL {path.name}: {total_bad:,} unresolved off-palette px in {len(unresolved)} colour(s)")
+                for color, count in sorted(unresolved.items(), key=lambda kv: -kv[1])[:5]:
+                    name, distance = nearest_class(color, color_to_id, id_to_name)
+                    print(f"       {str(color):18s} x{count:<9,d} nearest: {name}, distance {distance}")
+                if len(unresolved) > 5:
+                    print(f"       ... and {len(unresolved) - 5} more colour(s)")
+                continue
+
+            out_path = args.repair_output / path.name
+            Image.fromarray(repaired, mode="RGB").save(out_path, compression="tiff_deflate")
+            fixed_pixels = sum(count for _color, count, _replacement, _reason in replacements)
+            print(f"ok   {path.name} -> {out_path.relative_to(REPO_ROOT)} ({fixed_pixels:,} px repaired)")
+            for color, count, replacement, reason in sorted(replacements, key=lambda item: -item[1])[:3]:
+                print(f"       {str(color):18s} x{count:<9,d} -> {replacement}  {reason}")
+
+        print()
+        print(f"{len(masks) - len(failed)}/{len(masks)} masks repaired")
+        if failed:
+            print(
+                f"\n{len(failed)} mask(s) still contain colours outside the palette and snap threshold. "
+                "Fix those by hand or rerun with a larger --snap-distance after reviewing the output.",
+                file=sys.stderr,
+            )
+            raise SystemExit(1)
+        return
 
     if not args.check:
         args.output.mkdir(parents=True, exist_ok=True)
@@ -140,7 +240,7 @@ def main():
             print(f"FAIL {path.name}: {total_bad:,} off-palette px in {len(unknown)} colour(s)")
             for color, count in sorted(unknown.items(), key=lambda kv: -kv[1])[:5]:
                 if color in RETIRED:
-                    note = RETIRED[color]
+                    note = RETIRED[color]["note"]
                 else:
                     name, distance = nearest_class(color, color_to_id, id_to_name)
                     note = (
