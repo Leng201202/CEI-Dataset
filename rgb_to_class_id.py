@@ -158,7 +158,7 @@ def parse_args():
     parser.add_argument("--output", default=DEFAULT_OUTPUT, type=Path, help="Where to write class-ID masks.")
     parser.add_argument("--classes", default=DEFAULT_CLASSES, type=Path, help="Class definition JSON.")
     parser.add_argument("--pattern", default="*_mask.tif", help="Glob for the RGB masks.")
-    parser.add_argument("--suffix", default="_label.tif", help="Replaces '_mask.tif' in output names.")
+    parser.add_argument("--suffix", default=".tif", help="Replaces '_mask.tif' in output names.")
     parser.add_argument("--check", action="store_true", help="Validate palette only; write nothing.")
     parser.add_argument("--stats", action="store_true", help="Print per-class pixel counts across the run.")
     parser.add_argument(
