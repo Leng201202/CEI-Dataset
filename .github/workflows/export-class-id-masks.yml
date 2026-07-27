@@ -20,7 +20,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Find Python
-        shell: pwsh
+        shell: powershell
         run: |
           $python = Get-Command python -ErrorAction SilentlyContinue
           if (-not $python) {
@@ -35,17 +35,17 @@ jobs:
           "PYTHON=$($python.Source)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Install Python dependencies
-        shell: pwsh
+        shell: powershell
         run: |
           & "$env:PYTHON" -m pip install -r requirements.txt
 
       - name: Export RGB masks to class-id masks
-        shell: pwsh
+        shell: powershell
         run: |
           & "$env:PYTHON" rgb_to_class_id.py --stats
 
       - name: Copy masks to lulc-cei
-        shell: pwsh
+        shell: powershell
         run: |
           if ([string]::IsNullOrWhiteSpace($env:CEI_DATA_DIR)) {
             Write-Error "Missing GitHub Actions variable: CEI_DATA_DIR. Set it to the absolute path of the CEI_data folder on the Windows Desktop runner."
@@ -62,7 +62,7 @@ jobs:
           Copy-Item -Path "data\masks\*" -Destination $destMasks -Recurse -Force
 
       - name: Build CEI test split
-        shell: pwsh
+        shell: powershell
         run: |
           $dataRoot = Split-Path -Parent $env:CEI_DATA_DIR
           $lulcCeiDir = Split-Path -Parent $dataRoot
