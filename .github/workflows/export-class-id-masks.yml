@@ -17,35 +17,66 @@ jobs:
 
     steps:
       - name: Checkout CEI-Dataset
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
-      - name: Find Python
-        shell: pwsh
+      - name: Set up Python
+        shell: powershell
         run: |
+          $ErrorActionPreference = "Stop"
+
           $python = Get-Command python -ErrorAction SilentlyContinue
           if (-not $python) {
             $python = Get-Command py -ErrorAction SilentlyContinue
           }
 
-          if (-not $python) {
-            Write-Error "Python is not installed or is not on PATH for this runner."
-            exit 1
+          if ($python) {
+            "PYTHON=$($python.Source)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            exit 0
           }
 
-          "PYTHON=$($python.Source)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          $version = "3.11.9"
+          $pythonDir = Join-Path $env:RUNNER_TEMP "python-$version-embed-amd64"
+          $pythonExe = Join-Path $pythonDir "python.exe"
+
+          if (-not (Test-Path -Path $pythonExe -PathType Leaf)) {
+            $zipPath = Join-Path $env:RUNNER_TEMP "python-$version-embed-amd64.zip"
+            $getPipPath = Join-Path $env:RUNNER_TEMP "get-pip.py"
+            $pythonUrl = "https://www.python.org/ftp/python/$version/python-$version-embed-amd64.zip"
+            $getPipUrl = "https://bootstrap.pypa.io/get-pip.py"
+
+            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+            Invoke-WebRequest -Uri $pythonUrl -OutFile $zipPath -UseBasicParsing
+
+            if (Test-Path -Path $pythonDir -PathType Container) {
+              Remove-Item -Path $pythonDir -Recurse -Force
+            }
+            New-Item -ItemType Directory -Force -Path $pythonDir | Out-Null
+            Expand-Archive -LiteralPath $zipPath -DestinationPath $pythonDir -Force
+
+            $pthPath = Join-Path $pythonDir "python311._pth"
+            (Get-Content -Path $pthPath) -replace "#import site", "import site" |
+              Set-Content -Path $pthPath -Encoding ASCII
+
+            Invoke-WebRequest -Uri $getPipUrl -OutFile $getPipPath -UseBasicParsing
+            & $pythonExe $getPipPath --no-warn-script-location
+          }
+
+          & $pythonExe --version
+          & $pythonExe -m pip --version
+          "PYTHON=$pythonExe" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Install Python dependencies
-        shell: pwsh
+        shell: powershell
         run: |
           & "$env:PYTHON" -m pip install -r requirements.txt
 
       - name: Export RGB masks to class-id masks
-        shell: pwsh
+        shell: powershell
         run: |
           & "$env:PYTHON" rgb_to_class_id.py --stats
 
       - name: Copy masks to lulc-cei
-        shell: pwsh
+        shell: powershell
         run: |
           if ([string]::IsNullOrWhiteSpace($env:CEI_DATA_DIR)) {
             Write-Error "Missing GitHub Actions variable: CEI_DATA_DIR. Set it to the absolute path of the CEI_data folder on the Windows Desktop runner."
@@ -62,7 +93,7 @@ jobs:
           Copy-Item -Path "data\masks\*" -Destination $destMasks -Recurse -Force
 
       - name: Build CEI test split
-        shell: pwsh
+        shell: powershell
         run: |
           $dataRoot = Split-Path -Parent $env:CEI_DATA_DIR
           $lulcCeiDir = Split-Path -Parent $dataRoot
