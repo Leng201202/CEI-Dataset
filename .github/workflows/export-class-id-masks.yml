@@ -92,6 +92,11 @@ jobs:
           New-Item -ItemType Directory -Force -Path $destMasks | Out-Null
           Copy-Item -Path "data\masks\*" -Destination $destMasks -Recurse -Force
 
+      - name: Install CEI split dependencies
+        shell: powershell
+        run: |
+          & "$env:PYTHON" -m pip install opencv-python-headless
+
       - name: Build CEI test split
         shell: powershell
         run: |
