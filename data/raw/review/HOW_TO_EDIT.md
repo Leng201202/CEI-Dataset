@@ -5,6 +5,14 @@ Each image here comes as a pair:
 * `<stem>_image.png` -- the CEI aerial image. Reference only; never edit it.
 * `<stem>_mask.tif`  -- the model's draft label. **This is the file you edit.**
 
+To generate browser-viewable review images with the satellite on the left and
+the mask on the right, run this from the repository root:
+
+    python tif_to_png.py
+
+The combined files are written to `data/raw/review_preview/` as
+`<stem>_review.png`. The source images and TIFF masks are not changed.
+
 ## One-time setup
 
 1. Open GIMP.
