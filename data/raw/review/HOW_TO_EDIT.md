@@ -20,7 +20,7 @@ The combined files are written to `data/raw/review_preview/` as
    in the list, **Import Palette...**, choose *Palette file*, and select
    `oem_palette.gpl` from this folder. You now have the 8 class colors plus
    "Unlabeled (ignore)" and can click one to make it the foreground color.
-3. Pick the **Pencil** tool (`N`), not the Paintbrush. The pencil has hard edges.
+3. Pick the **Pencil** tool (`N`),  Paintbrush. The pencil has hard edges.
    The paintbrush anti-aliases, which invents blended colors that are not real
    classes. (Those get snapped back to the nearest class on import, so nothing
    breaks -- but the boundary ends up a pixel or two off from what you drew.)
